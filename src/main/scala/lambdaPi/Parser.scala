@@ -12,7 +12,7 @@ object lambdaPiParser extends RegexParsers {
     term5 ~ ":" ~ term5 ^^ { case term ~ _ ~ ty => Ann(term, ty) } | term5;
 
   // Lambda
-  def term5: Parser[Term] = "λ" ~ term5                ^^ { case _ ~ body => Lam(body) } | term6;
+  def term5: Parser[Term] = "λ" ~ term5 ^^ { case _ ~ body => Lam(body) } | term6;
 
   // Sigma (=>)
   def term6: Parser[Term] =

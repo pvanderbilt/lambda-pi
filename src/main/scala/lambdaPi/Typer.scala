@@ -96,7 +96,7 @@ object typer {
       _ <- checkType(tcb, dom)
       domV = evalClosed(dom)
       (lName, nTcb) = tcb.getFreshLN()
-      srange = range.subst0(FVar(lName)) 
+      srange = range.subst0(FVar(lName))
       _ <- checkType(nTcb.pushDecl(lName, domV), srange)
     } yield VType()
 
@@ -122,9 +122,9 @@ object typer {
    *  checkTerm (and checkType): check that a term has a given type
    */
 
-  def checkType (tcb: TCB, e: Term): TCM[()] = checkTerm(tcb, e, VType())
+  def checkType (tcb: TCB, e: Term): TCM[Unit] = checkTerm(tcb, e, VType())
 
-  def checkTerm (tcb: TCB, e: Term, expTy: TypeV): TCM[()] = e match {
+  def checkTerm (tcb: TCB, e: Term, expTy: TypeV): TCM[Unit] = e match {
 
     case Lam(body) => expTy match {
       case VPi(td, ftr) => {
@@ -148,8 +148,9 @@ object typer {
    *  checkTyEq: check that two types are equal
    */
 
-  def checkTyEq (actTy: TypeV, expTy: TypeV, t: Term): TCM[()] =
+  def checkTyEq (actTy: TypeV, expTy: TypeV, t: Term): TCM[Unit] =
     if (quote0(actTy) == quote0(expTy)) ret(())
     else error(s"Inferred type (${actTy}) != expected type ($expTy)", t)
+
 }
 
