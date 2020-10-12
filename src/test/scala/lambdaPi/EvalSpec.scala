@@ -32,7 +32,7 @@ class EvalSpec extends AnyFlatSpec with should.Matchers {
 
   def parseChecked (s: String): Term = lambdaPiParser.parseTerm(s) match {
     case Right(tm) => tm
-    case Left(emsg) => fail(s"""parsing of ${s}"failed: ${emsg}""")
+    case Left(emsg) => fail(s"""parsing of "${s}" failed: ${emsg}""")
   }
 
   "The eval function" should "exist" in { assert(eval _ != null) }

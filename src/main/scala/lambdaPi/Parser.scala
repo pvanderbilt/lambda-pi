@@ -12,9 +12,9 @@ object lambdaPiParser extends RegexParsers {
     term5 ~ ":" ~ term5 ^^ { case term ~ _ ~ ty => Ann(term, ty) } | term5;
 
   // Lambda
-  def term5: Parser[Term] = "λ" ~ term5                ^^ { case _ ~ body => Lam(body) } | term6;
+  def term5: Parser[Term] = "λ" ~ term5 ^^ { case _ ~ body => Lam(body) } | term6;
 
-  // Sigma (=>)
+  // Pi (=>)
   def term6: Parser[Term] =
     term7 ~ "=>" ~ term6 ^^ { case dom ~ _ ~ range => Pi(dom, range) } | term7;
 
@@ -32,11 +32,19 @@ object lambdaPiParser extends RegexParsers {
 
 
   // Parsing functions
-  def parseTermRaw(s: String) = parseAll[Term](term, s)
-  def parseTerm(s: String): Either[String, Term] = parseTermRaw(s) match {
+  def parseTermRaw (s: String) = parseAll[Term](term, s)
+  def parseTerm (s: String): Either[String, Term] = parseTermRaw(s) match {
     case Success(r,_) => Right(r)
     case NoSuccess(msg, _) => Left(s"NoSuccess: ${msg}")
     case Error(msg, _) => Left(s"Error: ${msg}")
+  }
+
+  def parseName (s: String): Either[String, Name] = parseTerm(s) match {
+    case Right(tm) => tm match {
+      case FVar(n) => Right(n)
+      case _ => Left(s"""The term${s} is not a name""")
+    }
+    case Left(emsg) => Left(emsg);
   }
 }
 
