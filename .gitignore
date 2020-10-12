@@ -1,0 +1,12 @@
+# sbt
+# (may want to keep parts of 'project')
+bin/
+project/
+target/
+build/
+
+# mac
+.DS_Store
+
+#general
+*.class
