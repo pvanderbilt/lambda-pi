@@ -1,5 +1,5 @@
 ThisBuild / scalaVersion := "2.13.3"
-ThisBuild / organization := "com.example"
+ThisBuild / organization := "com.petervanderbilt"
 
 lazy val main = (project in file("."))
   .settings(

@@ -67,4 +67,28 @@ object evaluator {
     case NQuote(k) => BVar(i-k-1)
     case x => FVar(x)
   }
-};
+}
+
+object evalOps {
+
+  def showc (v: Value): String = showcn (0, v)
+
+  def showcn (nb: Int, v: Value): String = v match {
+    case VLam (bf) => {
+      val bs = bf(VNeutral(NFree(NLocal(nb))))
+      s"λ[${showcn(nb+1, bs)}]";
+    };
+    case VType () => s"*";
+    case VPi (dom, rf) => {
+      val bs = rf(VNeutral(NFree(NLocal(nb))))
+      s"${showcn(nb, dom)}=>[${showcn(nb+1, bs)}]";
+    }
+    case VNeutral (n) => s"${showcn(nb, n)}";
+  }
+
+  def showcn (nb: Int, n: Neutral): String = n match {
+    case NFree (name) => syntaxOps.showcn(nb, name);
+    case NApp (func, arg) => s"${showcn(nb, func)} ${showcn(nb, arg)}";
+  }
+}
+

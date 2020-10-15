@@ -4,7 +4,6 @@ import lambdaPi.syntax._
 import lambdaPi.eval._
 import lambdaPi.eval.evaluator._
 
-
 /*
  * Ctx: Context, a list of declarations
  */
@@ -79,28 +78,52 @@ object TCM {
 object typer {
   import TCM._
 
+  val typerDebug: Boolean = false
+
   /*
    *  typeTerm: synthesize the type of a term
    */
+  def typeTerm (tcb: TCB, e: Term): TCM[TypeV] = {
+    if (typerDebug) {
+      println(s"""\n[trace] typeTerm: "${syntaxOps.showc(e)}"""")
+    }
+    typeTerm0(tcb, e)
+  }
 
-  def typeTerm (tcb: TCB, e: Term): TCM[TypeV] = e match {
+  def typeTerm0 (tcb: TCB, e: Term): TCM[TypeV] = {
+    if (typerDebug) {
+      val posStr = e.pos.toString match {
+        case "<undefined position>" => "   "
+        case s => s"@$s "
+      }
+      println(s"""[trace] ${posStr} \ttype : ${syntaxOps.showc(e)}""")
+      val res = typeTerm1(tcb, e)
+      res match {
+        case Ok(v) => println(s"[trace] \ttypeTerm returned: ${evalOps.showcn(tcb.nBinders, v)}")
+        case Err(msg, etm) => println(s"[trace] \ttypeTerm: FAILED")
+      }
+      res
+    } else typeTerm1(tcb, e)
+  }
+
+  def typeTerm1 (tcb: TCB, e: Term): TCM[TypeV] = e match {
     case Ann(e2, expTy) => for {
-      _ <- checkTerm(tcb, expTy, VType())
+      _ <- checkTerm0(tcb, expTy, VType())
       expTV = evalClosed(expTy)
-      _ <- checkTerm(tcb, e2, expTV)
+      _ <- checkTerm0(tcb, e2, expTV)
     } yield expTV;
 
     case Type() => ret(VType());
 
     case Pi(dom, range) => for {
-      _ <- checkType(tcb, dom)
+      _ <- checkType0(tcb, dom)
       domV = evalClosed(dom)
       (lName, nTcb) = tcb.getFreshLN()
       srange = range.subst0(FVar(lName))
-      _ <- checkType(nTcb.pushDecl(lName, domV), srange)
+      _ <- checkType0(nTcb.pushDecl(lName, domV), srange)
     } yield VType()
 
-    case BVar(_) => error("Should be no bound vars in terms", e);
+    case BVar(_) => error("Bound variable in term", e);
 
     case FVar(n) => tcb.lookupTy(n) match {
       case Some(ty) => ret(ty)
@@ -108,38 +131,57 @@ object typer {
     }
 
     case App(func, arg) => for {
-      funcTy <- typeTerm(tcb, func)
+      funcTy <- typeTerm0(tcb, func)
       rTy <- funcTy match {
         case VPi(domTy, rangeTF) => for {
-          _ <- checkTerm(tcb, arg, domTy)
+          _ <- checkTerm0(tcb, arg, domTy)
         } yield rangeTF(evalClosed(arg))
-        case _ => error("App of non-Pi type, ${funcTy}, for ${func}", e);
+        case _ => error(s"Application of non-Pi type, ${funcTy}, for ${func}", e);
       }
     } yield rTy
+
+    case Lam(body) => error(s"Untyped lambda", e);
+
   }
 
   /*
    *  checkTerm (and checkType): check that a term has a given type
    */
 
-  def checkType (tcb: TCB, e: Term): TCM[Unit] = checkTerm(tcb, e, VType())
+  def checkTerm (tcb: TCB, e: Term, expTyV: TypeV): TCM[Unit] = {
+    if (typerDebug) {
+      println(s"""\n[trace] checkTerm: "${syntaxOps.showc(e)}"""")
+     }
+    checkTerm0(tcb, e, expTyV)
+  }
 
-  def checkTerm (tcb: TCB, e: Term, expTy: TypeV): TCM[Unit] = e match {
+  def checkType0 (tcb: TCB, e: Term): TCM[Unit] = checkTerm0(tcb, e, VType())
+
+  def checkTerm0 (tcb: TCB, e: Term, expTyV: TypeV): TCM[Unit] = {
+    if (typerDebug) {
+      val posStr = e.pos.toString match {
+        case "<undefined position>" => ""
+        case s => s"@$s "
+      }
+      println(s"""[trace] ${posStr} \tcheck: ${syntaxOps.showc(e)} : ${evalOps.showcn(tcb.nBinders,expTyV)}""")
+    }
+    checkTerm1(tcb, e, expTyV)
+  }
+
+  def checkTerm1 (tcb: TCB, e: Term, expTy: TypeV): TCM[Unit] = e match {
 
     case Lam(body) => expTy match {
       case VPi(td, ftr) => {
         val (lName, nTcb) = tcb.getFreshLN();
         val sbody = body.subst0(FVar(lName));
-        checkTerm(nTcb.pushDecl(lName, td), sbody, ftr(vfree(lName)));
-        // checkTerm(tcb.pushLocal(td), body, ftr(vfree(NLocal(tcb.nBinders))));
-
+        checkTerm0(nTcb.pushDecl(lName, td), sbody, ftr(vfree(lName)));
       }
-      case _ => error(s"Not a Pi type: ${expTy}", e);
+      case _ => error(s"Type of lambda not a Pi type: ${expTy}", e);
     }
 
     // for everything else, use type synthesis and check return
     case _ => for {
-      actTy <- typeTerm(tcb, e);
+      actTy <- typeTerm1(tcb, e);
       _ <- checkTyEq(actTy, expTy, e)
     } yield ()
   }
@@ -148,9 +190,11 @@ object typer {
    *  checkTyEq: check that two types are equal
    */
 
-  def checkTyEq (actTy: TypeV, expTy: TypeV, t: Term): TCM[Unit] =
-    if (quote0(actTy) == quote0(expTy)) ret(())
-    else error(s"Inferred type (${actTy}) != expected type ($expTy)", t)
-
+  def checkTyEq (actTy: TypeV, expTy: TypeV, t: Term): TCM[Unit] = {
+    val actTyS = quote0(actTy)
+    val expTyS = quote0(expTy)
+    if (actTyS == expTyS) ret(())
+    else error(s"Inferred type ($actTyS}) != expected type (${expTyS})", t)
+  }
 }
 

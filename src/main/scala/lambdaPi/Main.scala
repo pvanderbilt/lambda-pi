@@ -51,11 +51,44 @@ object Main extends scala.App {
 
   /*
    * Functions for printing the results of various functions
-   *   pep: Parse and eval a string and print the result
-   *   ptp: Parse and type a string and print the result
+   *   pes: Parse and eval a string and print the result (using showc)
+   *   pts: Parse and type a string and print the result (using showc)
+   *   peq: Parse and eval a string and print its quoted result
+   *   ptq: Parse and type a string and print its quoted result
    */
 
-  def pep (tms: String): Unit = {
+  def pes (tms: String): Unit = {
+    parser.parseTerm(tms) match {
+      case Right(tm) => {
+        val tmv = eval(env, tm);
+        val tmvs = evalOps.showc(tmv);
+        val tmvq = evalQuote(env, tm); //  \t(${tmvq})
+        println(s"""eval("${tms}") = $tmvs""")
+      }
+      case Left(emsg) => println(s"""- Parsing of "${tms}" failed: ${emsg}""")
+    }
+  }
+
+  def pts (tms: String): Unit = {
+    parser.parseTerm(tms) match {
+      case Right(tm) => {
+        typeTerm(ntcb, tm) match {
+          case Ok(tyv) => println(s"""typeTerm("${tms}") = ${evalOps.showc(tyv)}""")
+          case Err(msg, etm) => {
+            println(s"""[error] "${tms}"@${etm.pos}: ${msg}""")
+            // println(s"""    @"${syntaxOps.showc(etm)}" """)
+            etm.pos.longString.linesIterator.foreach {
+              str => println("[error]     |" ++ str)
+            }
+            //println(etm.pos.longString)
+          }
+        }
+      }
+      case Left(emsg) => println(s"""- Parsing of "${tms}" failed: ${emsg}""")
+    }
+  }
+
+  def peq (tms: String): Unit = {
     parser.parseTerm(tms) match {
       case Right(tm) => {
         val tmv = eval(env, tm);
@@ -67,17 +100,21 @@ object Main extends scala.App {
     }
   }
 
-  def ptp (tms: String): Unit = {
+  def ptq (tms: String): Unit = {
     parser.parseTerm(tms) match {
       case Right(tm) => {
         typeTerm(ntcb, tm) match {
           case Ok(tyv) => println(s"""typeTerm("${tms}") = ${quote0(tyv)}""")
-          case Err(msg, _) => println(s"""- Typing of "${tms}" failed: ${msg}""")
+          case Err(msg, t) => {
+            println(s"""- Typing of "${tms}" failed: ${msg}""")
+            println(s"""    @"$t"""")
+          }
         }
       }
       case Left(emsg) => println(s"""- Parsing of "${tms}" failed: ${emsg}""")
     }
   }
+
 
   /*
    * Commands
@@ -86,32 +123,55 @@ object Main extends scala.App {
   println("Pete's lambdaPi implementation:")
   println()
 
-  pep("*");
-  pep("λ#0");
-  pep("*=>*");
-  pep("λλ#0");
-  pep("λλ#1");
-  pep("*=>#0");
-  pep("*=>(#0=>#1)");
-  pep("x");
+  pes("*");
+  pes("λ#0");
+  pes("*=>*");
+  pes("λλ#0");
+  pes("λλ#1");
+  pes("λλλλ#0 #1 #2 #3");
+  pes("*=>#0");
+  pes("*=>(#0=>#1)");
+  pes("Bool");
+  pes("true");
+  pes("(λλ#0) true");
+  pes("(λλ#0) true false");
+  pes("(λ#0)(λ#0)");
+  pes("(λλ#0)(Bool=>Bool)(λ#0)");
   println()
 
-  ptp("*");
-  ptp("x");
-  ptp("λ#0 : *=>*");
-  ptp("*=>*");
-  //ptp("λλ#0");
-  //ptp("λλ#1");
-  ptp("*=>#0");
-  ptp("*=>(#0=>#1)");
+  pts("*");
+  pts("λ#0 : *=>*");
+  pts("*=>*");
+  pts("λλ#0");
+  pts("*=>#0");
+  pts("*=>(#0=>#1)");
   println()
 
   println("assume Bool: *, true: Bool, false: Bool")
-  ptp("Bool")
-  ptp("true")
-  ptp("(λ#0 : Bool=>Bool) true");
-  ptp("(λλ#0 : *=>#0=>#1) Bool true");
-  ptp("(λλ#0 : *=>#0=>#1) * true");
-  println()
+  pts("Bool")
+  pts("true")
+  pts("(λ#0 : Bool=>Bool) true");
+  pts("(λλ#0 : *=>#0=>#1) Bool true");
+
+  val lpf_id = "(λλ#0 : *=>#0=>#1)"
+  println(s"\ndefine id = $lpf_id");
+  pts(lpf_id);
+  // pts(s"$lpf_id Bool");
+  // pts(s"$lpf_id Bool true");
+  // pts(s"$lpf_id * Bool");
+  // pts(s"$lpf_id * Bool");
+  // pts(s"$lpf_id ($lpf_id * Bool) true");
+  // pes(s"$lpf_id ($lpf_id * Bool) true");
+  // pes(s"$lpf_id ($lpf_id * Bool)");
+
+  // // const : (A:*) => A => ((B:*) => B) => A = λA. λa. λB. λb. a
+  // val lpf_const = "(λλλλ#2 : *=>#0=>*=>#0=>#2)"
+  // println(s"\ndefine const = $lpf_const");
+  // pts(lpf_const);
+  // pes(lpf_const);
+
+  // pts("true *");
+  // pts("(λλ#0 : *=>#0=>#1) * true");
+  // println()
 
 }

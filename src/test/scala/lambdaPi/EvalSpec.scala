@@ -61,12 +61,6 @@ class EvalSpec extends AnyFlatSpec with should.Matchers {
 
   def checkEvalQuote (env: Env, stm: String) = {
     val tm = parseChecked(stm);
-    // val rptm = parser.parseTermRaw(stm)
-    // val tm = rptm match {
-    //   case parser.Success(ast, _) => ast
-    //   case parser.NoSuccess(msg, _) => fail(s"NoSuccess when parsing  '${stm}'; msg = ${msg}")
-    //   case parser.Error(msg, _) => fail(s"Error when parsing  '${stm}'; msg = ${msg}")
-    // }
     it should s"""map "${stm}" to itself \t(${tm})""" in {
       // info(s"  tm = ${tm}");
       val ntm = evalQuote(env, tm)
@@ -76,18 +70,16 @@ class EvalSpec extends AnyFlatSpec with should.Matchers {
 
   def checkEvalQuoteExp (env: Env, stm: String, sExpTm: String = null) = {
     val tm = parseChecked(stm);
-    // val rptm = parser.parseTermRaw(stm)
-    // val tm = rptm match {
-    //   case parser.Success(ast, _) => ast
-    //   case parser.NoSuccess(msg, _) => fail(s"NoSuccess when parsing  '${stm}'; msg = ${msg}")
-    //   case parser.Error(msg, _) => fail(s"Error when parsing  '${stm}'; msg = ${msg}")
-    // }
-    val expTm: Term = if (sExpTm == null) null else parseChecked(sExpTm);
-    it should s"""map "${stm}" to "${sExpTm}"""" in {
-      // info(s"  tm = ${tm}");
-      //  \t(term: ${tm})
-      val ntm = evalQuote(env, tm)
-      ntm should be (expTm)
+    if (sExpTm == null) {
+      info(s"""map "${stm}" to "${evalQuote(env, tm)}"""")
+    } else {
+      val expTm: Term = parseChecked(sExpTm);
+      it should s"""map "${stm}" to "${sExpTm}"""" in {
+        // info(s"  tm = ${tm}");
+        //  \t(term: ${tm})
+        val ntm = evalQuote(env, tm)
+        ntm should be (expTm)
+      }
     }
   }
 
@@ -103,6 +95,7 @@ class EvalSpec extends AnyFlatSpec with should.Matchers {
   info("The evalQuote function");
 
   // These things (with λ or =>) yield functions which can't be compared
+  //  so quote result and then compare
   checkEvalQuote(env, "λ#0");
   checkEvalQuote(env, "*=>*");
   checkEvalQuote(env, "λλ#0");
@@ -123,4 +116,17 @@ class EvalSpec extends AnyFlatSpec with should.Matchers {
   checkEvalQuoteExp(env, "(λλλ#1) (*=>#0=>#1) (λλ#1)", "λλλ#1")
   checkEvalQuoteExp(env, "(λλλ#1) (*=>#0=>#1) (λλ#1) (λλ#0)", "λλ#1")
   // checkEvalQuoteExp(env, "(λλλλ#3) (*=>#0=>#1) (λλ#1) (λλ#0)", "λλ#1")
+
+  checkEvalQuoteExp(env, "Bool", "Bool");
+  checkEvalQuoteExp(env, "true", "true");
+  checkEvalQuoteExp(env, "(λλ#0) true", "λ#0");
+  checkEvalQuoteExp(env, "(λλ#0) true false", "false");
+  checkEvalQuoteExp(env, "(λ#0)(λ#0)", "λ#0");
+  checkEvalQuoteExp(env, "(λλ#0)(Bool=>Bool)(λ#0)", "λ#0");
+  checkEvalQuoteExp(env, "(λλ#0)(Bool=>Bool)(λ#0) true", "true");
+
+  checkEvalQuoteExp(env, "(λ#0 : *=>#0)(*=>#0)", "*=>#0");
+  checkEvalQuoteExp(env, "(λBool : *=>#0)(*=>#0)", "Bool");
+  // checkEvalQuoteExp(env, "(*=>#0)(*=>#0)"); // TBD- gens error fix
+
 }

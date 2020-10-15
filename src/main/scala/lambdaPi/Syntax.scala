@@ -10,13 +10,13 @@ package lambdaPi.syntax
  *   App (func: Term, arg: Term)
  *   Lam (body: Term) 
  * 
- *  Name ::= 
+ * Name ::= 
  *   NGlobal (n: String)
  *   NLocal (nbinders: Int)
  *   NQuote (n: Int)
  */
 
-trait Term {
+trait Term extends scala.util.parsing.input.Positional {
   def subst (i: Int, r: Term): Term;
   def subst0 (r: Term): Term = this.subst(0, r);
 }
@@ -48,3 +48,40 @@ case class NGlobal (n: String)    extends Name {
 }
 case class NLocal (nbinders: Int) extends Name;
 case class NQuote (n: Int)        extends Name;
+
+object syntaxOps {
+
+  /*
+   * Show concise
+   *   showcm (m, t): show t, parenthesized if its prec < m (min)
+   *   showcp (t): yield (p, s), where p is t's level and s is the string
+   */
+  def showc (t: Term): String = showcm(0, t)
+  def showcm(m: Int, t: Term) = {
+    val (p, s) = showcp(t);
+    if (p < m) s"(${s})" else s
+  }
+
+  def showcp (t: Term): (Int, String) = t match {
+    case Ann (tm: Term, ty: Term) =>    (3, s"${showcm(5, tm)} : ${showcm(5, ty)}");
+    case Type () =>                     (9, "*");
+    case Pi (dom: Term, range: Term) => (6, s"${showcm(7, dom)} => ${showcm(6, range)}");
+    case BVar (nbinders: Int) =>        (9, s"#${nbinders}");
+    case FVar (name: Name) =>           (9, showc(name));
+    case App (func: Term, arg: Term) => (7, s"${showcm(9, func)} ${showcm(9, arg)}");
+    case Lam (body: Term) =>            (5, s"λ${showcm(5, body)}");
+  }
+
+  def showc (n: Name): String = n match {
+    case NGlobal (n: String) =>    n;
+    case NLocal (k: Int) =>        s"#$k"
+    case NQuote (k: Int) =>        s"'k";
+  }
+
+  def showcn (nb: Int, n: Name): String = n match {
+    case NGlobal (n: String) =>    n;
+    case NLocal (k: Int) =>        s"#${nb-k-1}"
+    case NQuote (k: Int) =>        s"'k";
+  }
+
+}

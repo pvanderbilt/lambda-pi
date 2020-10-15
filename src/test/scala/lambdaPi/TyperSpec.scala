@@ -28,7 +28,7 @@ class TyperSpec extends AnyFlatSpec with should.Matchers {
 
 
   def checkTypeTerm (tcb: TCB, tms: String, expTyS: String = null) = {
-    it should s"TYPE term ${tms} to ${expTyS}" in {
+    it should s"""TYPE term "${tms}" to "${expTyS}"""" in {
       val tm = parseChecked(tms)
       val expTy = if (expTyS == null) null else parseChecked(expTyS)
       // val expTyV = evalClosed(expTy);
@@ -58,7 +58,7 @@ class TyperSpec extends AnyFlatSpec with should.Matchers {
   }
 
   def checkCheckTerm (tcb: TCB, tms: String, expTys: String) = {
-    it should s"CHECK that term ${tms} has type ${expTys}" in {
+    it should s"""CHECK that term "${tms}" has type "${expTys}"""" in {
       val tm = parseChecked(tms);
       val expTy = parseChecked(expTys);
       val expTyV = evalClosed(expTy);
@@ -118,5 +118,28 @@ class TyperSpec extends AnyFlatSpec with should.Matchers {
   checkTypeTerm(ntcb, "true", "Bool")
   checkCheckTerm(ntcb, "false", "Bool")
   // more TBD
+  checkCheckTerm(ntcb, "Bool", "*");
+  checkCheckTerm(ntcb, "true", "Bool");
+  checkCheckTerm(ntcb, "(λλ#0 : Bool=>Bool=>Bool) true", "Bool=>Bool");
+  checkCheckTerm(ntcb, "(λλ#0 : Bool=>Bool=>Bool) true false", "Bool");
+  // checkCheckTerm(ntcb, "(λ#0)(λ#0)", "λ#0");
+  checkCheckTerm(ntcb, "(λλ#0 : *=>#0=>#1)", "*=>#0=>#1");
+  checkCheckTerm(ntcb, "(λλ#0 : *=>#0=>#1)(Bool=>Bool)",
+    "(Bool=>Bool)=>Bool=>Bool");
+  checkCheckTerm(ntcb, "(λλ#0 : *=>#0=>#1)(Bool=>Bool)(λ#0)", "Bool=>Bool");
+  checkCheckTerm(ntcb, "(λλ#0 : *=>#0=>#1)(Bool=>Bool)(λ#0) true", "Bool");
+
+  checkTypeTerm (ntcb, "(λλ#0 : Bool=>Bool=>Bool) true", "Bool=>Bool");
+  checkTypeTerm (ntcb, "(λλ#0 : Bool=>Bool=>Bool) true false", "Bool");
+  // checkTypeTerm (ntcb, "(λ#0)(λ#0)", "λ#0");
+  checkTypeTerm (ntcb, "(λλ#0 : *=>#0=>#1)", "*=>#0=>#1");
+  checkTypeTerm (ntcb, "(λλ#0 : *=>#0=>#1)(Bool=>Bool)",
+    "(Bool=>Bool)=>Bool=>Bool");
+  checkTypeTerm (ntcb, "(λλ#0 : *=>#0=>#1)(Bool=>Bool)(λ#0)", "Bool=>Bool");
+  checkTypeTerm (ntcb, "(λλ#0 : *=>#0=>#1)(Bool=>Bool)(λ#0) true", "Bool");
+
+  // checkCheckTerm(ntcb, "(λ#0 : *=>#0)(*=>#0)", "*=>#0");
+  // checkCheckTerm(ntcb, "(λBool : *=>#0)(*=>#0)", "Bool");
+
 
 }
