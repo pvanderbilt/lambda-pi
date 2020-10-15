@@ -2,6 +2,7 @@
 bin/
 target/
 build/
+.bsp/
 
 project/*
 !project/build.properties
