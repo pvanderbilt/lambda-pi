@@ -53,4 +53,5 @@ class ParserSpec extends AnyFlatSpec with should.Matchers {
   checkParse("(*:*)", Ann(Type(),Type()))
   checkParse("λλλ#1 : *=>#0=>#1=>#2",
     Ann(Lam(Lam(Lam(BVar(1)))),Pi(Type(),Pi(BVar(0),Pi(BVar(1),BVar(2))))))
+  checkParse("(λλ#0 : *=>#0=>#1)", Ann(Lam(Lam(BVar(0))) ,Pi(Type(),Pi(BVar(0),BVar(1)))))
 }
