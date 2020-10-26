@@ -123,6 +123,14 @@ object typer {
       _ <- checkType0(nTcb.pushDecl(lName, domV), srange)
     } yield VType()
 
+    case Sigma(dom, range) => for {
+      _ <- checkType0(tcb, dom)
+      domV = evalClosed(dom)
+      (lName, nTcb) = tcb.getFreshLN()
+      srange = range.subst0(FVar(lName))
+      _ <- checkType0(nTcb.pushDecl(lName, domV), srange)
+    } yield VType()
+
     case BVar(_) => error("Bound variable in term", e);
 
     case FVar(n) => tcb.lookupTy(n) match {
@@ -140,7 +148,27 @@ object typer {
       }
     } yield rTy
 
-    case Lam(body) => error(s"Untyped lambda", e);
+    case Proj(t, k) => for {
+      tTy <- typeTerm0(tcb, t)
+      retTy <- tTy match {
+        case VSig(domTy, rangeTF) => {
+          k match {
+            case 0 => ret(domTy)
+            case 1 => {
+              val t0v = evalClosed(Proj(t, 0))
+              ret(rangeTF(t0v))
+            }
+            case _ => error(s"Selection index ($k) out of range", t)
+          }
+        }
+        case _ => error(s"Projection of non-Sigma type, ${tTy}, for ${t}", e)
+      }
+    } yield retTy
+  
+    case Lam(_) => error(s"Untyped lambda", e);
+    case Pair(_, _) => error(s"Untyped pair", e)
+
+    case _ => error(s"Term type not implemented", e)
 
   }
 
@@ -177,6 +205,15 @@ object typer {
         checkTerm0(nTcb.pushDecl(lName, td), sbody, ftr(vfree(lName)));
       }
       case _ => error(s"Type of lambda not a Pi type: ${expTy}", e);
+    }
+
+    case Pair(t0, t1) => expTy match {
+      case VSig(td, ftr) => for {
+        _ <- checkTerm0(tcb, t0, td)
+        t0V = evalClosed(t0)
+        _ <- checkTerm0(tcb, t1, ftr(t0V))
+      } yield ()
+      case _ => error(s"Type of pair not a sigma type: ${expTy}", e);
     }
 
     // for everything else, use type synthesis and check return

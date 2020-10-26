@@ -75,6 +75,7 @@ object Main extends scala.App {
         typeTerm(ntcb, tm) match {
           case Ok(tyv) => println(s"""typeTerm("${tms}") = ${evalOps.showc(tyv)}""")
           case Err(msg, etm) => {
+            println(s"""typeTerm("${tms}") = ...""")
             println(s"""[error] "${tms}"@${etm.pos}: ${msg}""")
             // println(s"""    @"${syntaxOps.showc(etm)}" """)
             etm.pos.longString.linesIterator.foreach {
@@ -143,6 +144,7 @@ object Main extends scala.App {
   pts("λ#0 : *=>*");
   pts("*=>*");
   pts("λλ#0");
+  pts("λλ#0 : *=>#0=>#1");
   pts("*=>#0");
   pts("*=>(#0=>#1)");
   println()

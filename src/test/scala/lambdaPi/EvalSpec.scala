@@ -129,4 +129,12 @@ class EvalSpec extends AnyFlatSpec with should.Matchers {
   checkEvalQuoteExp(env, "(λBool : *=>#0)(*=>#0)", "Bool");
   // checkEvalQuoteExp(env, "(*=>#0)(*=>#0)"); // TBD- gens error fix
 
+  checkEvalQuote(env, "* × #0");
+  checkEvalQuote(env, "x,y");
+  checkEvalQuote(env, "x,y,z");
+  checkEvalQuoteExp(env, "(x,y,z).0", "x");
+  checkEvalQuoteExp(env, "(x,y,z).1", "y,z");
+  checkEvalQuoteExp(env, "(x,y,z).1.0", "y");
+
+
 }

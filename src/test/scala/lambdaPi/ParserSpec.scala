@@ -54,4 +54,10 @@ class ParserSpec extends AnyFlatSpec with should.Matchers {
   checkParse("λλλ#1 : *=>#0=>#1=>#2",
     Ann(Lam(Lam(Lam(BVar(1)))),Pi(Type(),Pi(BVar(0),Pi(BVar(1),BVar(2))))))
   checkParse("(λλ#0 : *=>#0=>#1)", Ann(Lam(Lam(BVar(0))) ,Pi(Type(),Pi(BVar(0),BVar(1)))))
+  checkParse("λ#0 , λ#0", Pair(Lam(BVar(0)),Lam(BVar(0))))
+  checkParse("x×y", Sigma(FVar(NGlobal("x")),FVar(NGlobal("y"))))
+  checkParse("x × y × z",
+    Sigma(FVar(NGlobal("x")),Sigma(FVar(NGlobal("y")),FVar(NGlobal("z")))))
+  checkParse("λ#0 , λ#0, x", Pair(Lam(BVar(0)),Pair(Lam(BVar(0)),FVar(NGlobal("x")))))
+  checkParse("x . 0", Proj(FVar(NGlobal("x")), 0))
 }
