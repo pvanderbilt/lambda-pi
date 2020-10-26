@@ -6,9 +6,9 @@ language as described by sections 2 and 3 of the paper,
 by Löh, McBride and Swierstra (which presents an implementation in
 Haskell).
 
-I implemented λ~π (as described by sections 2 and 3
+I implemented λπ (as described by sections 2 and 3
 of the paper, but not section 4
-("Beyond λ~π").
+("Beyond λπ").
 However, I additionally implemented Sigma types,
 which are dependent sums and
 also called "dependent pairs".
