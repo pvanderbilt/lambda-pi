@@ -141,5 +141,15 @@ class TyperSpec extends AnyFlatSpec with should.Matchers {
   // checkCheckTerm(ntcb, "(λ#0 : *=>#0)(*=>#0)", "*=>#0");
   // checkCheckTerm(ntcb, "(λBool : *=>#0)(*=>#0)", "Bool");
 
+  checkTypeTerm (ntcb, "* × *", "*");
+  checkTypeTerm (ntcb, "* × Bool", "*");
+  checkTypeTerm (ntcb, "* => #0", "*");
+  checkTypeTerm (ntcb, "* × #0", "*");
+  checkCheckTerm (ntcb, "Bool, Bool", "*×*");
+  checkCheckTerm (ntcb, "*, Bool", "*×#0");
+  checkCheckTerm (ntcb, "Bool, true", "*×#0");
+  checkCheckTerm (ntcb, "Bool, λ#0", "* × (#0 => Bool)");
+  checkTypeTerm (ntcb, "(Bool, true : * × #0).0", "*");
+  checkTypeTerm (ntcb, "(Bool, true : * × #0).1", "Bool");
 
 }
